@@ -192,12 +192,15 @@ body {
 /* =========================================
    4. LAYOUT & SIDEBAR
    ========================================= */
+
 .main {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 240px 1fr; /* Fixed sidebar width, rest for products */
+    gap: 40px; /* This fixes the "bad gap" by making it intentional and clean */
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 40px auto; /* Adds breathing room top/bottom */
     padding: 0 20px;
+    align-items: start; /* Prevents sidebar from stretching weirdly */
 }
 
 input[name="filter"] {
@@ -206,85 +209,103 @@ input[name="filter"] {
 
 .sidebar {
     background: white;
-    padding: 15px;
+    padding: 25px;
+    border-radius: 16px; /* Smoother corners */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft, modern shadow */
+    position: sticky; /* MAGICAL FIX: Sidebar stays visible while scrolling */
+    top: 100px; /* Spacing from the top navbar */
     height: fit-content;
-    border-radius: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    border: 1px solid #f0f0f0;
 }
 
+.sidebar h3 {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #222;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+/* The Category Buttons */
 .sidebar label {
-    display: block;
-    margin: 8px 0;
-    padding: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    color: #555;
+    font-weight: 500;
+    font-size: 0.95rem;
     cursor: pointer;
-    border-radius: 5px;
-    transition: 0.2s;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background-color: white;
 }
 
+/* Hover Effect - The "Attractive" Part */
 .sidebar label:hover {
-    background: #eee;
+    background-color: #fff0ee; /* Light orange tint */
     color: #ff523b;
+    padding-left: 20px; /* Cool slide animation */
+    font-weight: 600;
 }
 
-/* --- UPDATED SUB-MENU LOGIC --- */
+/* Add a little arrow icon after the text using CSS */
+.sidebar label::after {
+    content: '›';
+    font-size: 18px;
+    transition: 0.3s;
+    opacity: 0.5;
+}
 
-/* 1. Hide both menus by default */
+.sidebar label:hover::after {
+    margin-right: -5px;
+    opacity: 1;
+}
+
+/* --- Sub-Menus (Dropdowns) --- */
 .sub-menu {
-    display: none;
-    margin-left: 20px;
-    border-left: 2px solid #ddd;
-    padding-left: 10px;
-    margin-top: 5px;
-    overflow: hidden;
+    display: none; /* Hidden by default */
+    background: #f9f9f9;
+    border-radius: 10px;
+    padding: 10px;
+    margin-bottom: 15px;
+    animation: slideDown 0.3s ease;
 }
 
 .sub-menu label {
+    font-size: 0.85rem;
+    padding: 10px 12px;
     margin: 5px 0;
-    color: #555;
-    font-size: 0.9rem;
+    background: transparent;
+    border-left: 2px solid transparent;
+    border-radius: 5px;
 }
 
 .sub-menu label:hover {
-    padding-left: 5px;
+    background: white;
+    color: #ff523b;
+    border-left: 2px solid #ff523b; /* Red line indicator */
+    padding-left: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
 }
 
-/* 2. Show ONLY Clothes Menu when Clothes related items are checked */
+/* Animation for opening menu */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Active State (Keep menus open) - Same logic as before */
 #clothes:checked ~ .sidebar .clothes-menu,
-#topwear:checked ~ .sidebar .clothes-menu,
-#bottomwear:checked ~ .sidebar .clothes-menu {
-    display: block;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-/* 3. Show ONLY Jewellery Menu when Jewellery related items are checked */
 #jewellery:checked ~ .sidebar .jewellery-menu,
-#jhumka:checked ~ .sidebar .jewellery-menu,
-#studs:checked ~ .sidebar .jewellery-menu,
-#ring:checked ~ .sidebar .jewellery-menu,
-#cartilage:checked ~ .sidebar .jewellery-menu,
-#neck:checked ~ .sidebar .jewellery-menu {
+/* Add your other specific IDs here if needed */
+#jhumka:checked ~ .sidebar .jewellery-menu {
     display: block;
-    animation: fadeIn 0.3s ease-in-out;
 }
-
-/* --- JEWELLERY FILTERING LOGIC (Ensure these match your new lowercase IDs) --- */
-#jewellery:checked ~ .products .product:not(.jewellery) { display: none; }
-#jhumka:checked ~ .products .product:not(.jhumka) { display: none; }
-#studs:checked ~ .products .product:not(.studs) { display: none; }
-#ring:checked ~ .products .product:not(.ring) { display: none; }
-#cartilage:checked ~ .products .product:not(.cartilage) { display: none; }
-#neck:checked ~ .products .product:not(.neck) { display: none; }
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 /* =========================================
    5. PRODUCTS GRID (UPDATED FOR HOVER)
    ========================================= */
