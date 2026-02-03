@@ -1,5 +1,5 @@
 /* =========================================
-   1. GLOBAL VARIABLES & SELECTORS
+   1. GLOBAL VARIABLES & USER SESSION
    ========================================= */
 const cartSidebar = document.getElementById('cart-sidebar');
 const cartItemsContainer = document.getElementById('cart-items');
@@ -12,37 +12,58 @@ const scrollToTopBtn = document.getElementById("scrollToTop");
 const searchBox = document.getElementById('search-box');
 const toastBox = document.getElementById('toast-box');
 
-// Global State
-let cart = JSON.parse(localStorage.getItem('cart')) || [];
-let wishlist = JSON.parse(localStorage.getItem('wishlist')) || [];
-let recentItems = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
-let discount = 0; // 0% initially
+// --- USER SESSION LOGIC ---
+const currentUser = localStorage.getItem('currentUser'); // Get logged in user
+const dbKey = (key) => currentUser ? `${key}_${currentUser}` : key; // Helper for user-specific keys
 
-/* =========================================
-   2. TOAST NOTIFICATIONS (Must be defined first)
-   ========================================= */
-function showToast(msg, type = 'success') {
-    if (!toastBox) return; // Safety check
+// Load Data based on User
+let cart = JSON.parse(localStorage.getItem(dbKey('cart'))) || [];
+let wishlist = JSON.parse(localStorage.getItem(dbKey('wishlist'))) || [];
+let recentItems = JSON.parse(localStorage.getItem(dbKey('recentlyViewed'))) || [];
+let orders = JSON.parse(localStorage.getItem(dbKey('orders'))) || [];
+let discount = 0;
 
-    const toast = document.createElement('div');
-    toast.classList.add('toast', type);
+// Update UI based on Login Status
+const loginLink = document.querySelector('a[href="login.html"]');
+const navMenu = document.querySelector('.menu');
 
-    // Icon based on type
-    const icon = type === 'success' ? '✅' : '❌';
+if (currentUser && loginLink) {
+    // 1. Change Login to Logout
+    loginLink.innerText = `Logout (${currentUser})`;
+    loginLink.style.color = "red";
+    loginLink.href = "#";
+    loginLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (confirm("Are you sure you want to logout?")) {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    });
 
-    toast.innerHTML = `${icon} ${msg}`;
-    toastBox.appendChild(toast);
-
-    // Remove from DOM after 3.5 seconds
-    setTimeout(() => {
-        toast.remove();
-    }, 3500);
+    // 2. Add "My Orders" Link
+    const ordersLink = document.createElement('a');
+    ordersLink.href = "#";
+    ordersLink.innerText = "My Orders";
+    ordersLink.id = "orders-btn";
+    navMenu.insertBefore(ordersLink, loginLink); 
 }
 
 /* =========================================
-   3. CART LOGIC & PROMO CODES
+   2. TOAST NOTIFICATIONS
    ========================================= */
-// Initial Load
+function showToast(msg, type = 'success') {
+    if (!toastBox) return;
+    const toast = document.createElement('div');
+    toast.classList.add('toast', type);
+    const icon = type === 'success' ? '✅' : '❌';
+    toast.innerHTML = `${icon} ${msg}`;
+    toastBox.appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+/* =========================================
+   3. CART & CHECKOUT
+   ========================================= */
 updateCartUI();
 
 function toggleCart() {
@@ -50,43 +71,45 @@ function toggleCart() {
     overlay.classList.toggle('active');
 }
 
-// Open/Close Cart Listeners
-const cartLink = document.getElementById('cart-count').parentElement;
-if (cartLink) cartLink.addEventListener('click', (e) => { e.preventDefault(); toggleCart(); });
-if (closeCartBtn) closeCartBtn.addEventListener('click', toggleCart);
-if (overlay) overlay.addEventListener('click', toggleCart);
+const cartLink = document.getElementById('cart-count')?.parentElement;
+if(cartLink) cartLink.addEventListener('click', (e) => { e.preventDefault(); toggleCart(); });
+if(closeCartBtn) closeCartBtn.addEventListener('click', toggleCart);
+if(overlay) overlay.addEventListener('click', toggleCart);
 
-// Add to Cart
-const addToCartButtons = document.querySelectorAll('.add-cart-btn');
-addToCartButtons.forEach(button => {
+// Add to Cart Logic
+document.querySelectorAll('.add-cart-btn').forEach(button => {
     button.addEventListener('click', (event) => {
+        if(!currentUser) { showToast("Please Login First!", "error"); return; }
+        
         const productCard = event.target.closest('.product');
         const name = productCard.querySelector('.product-info h4').innerText;
         const priceText = productCard.querySelector('.product-info .price').innerText;
         const imgSrc = productCard.querySelector('.product-image-wrapper img').src;
         const price = parseFloat(priceText.replace(/[^\d.]/g, ''));
 
-        const product = { name, price, imgSrc };
-        cart.push(product);
-        updateCartUI();
-
-        // Show Toast instead of Alert
-        showToast(`${name} added to cart!`);
+        addToCart(name, price, imgSrc);
     });
 });
 
-// Update UI
+// Helper function to add to cart (used by buttons and Wishlist)
+function addToCart(name, price, imgSrc) {
+    const product = { name, price, imgSrc };
+    cart.push(product);
+    updateCartUI();
+    showToast(`${name} added to cart!`);
+}
+
 function updateCartUI() {
-    localStorage.setItem('cart', JSON.stringify(cart));
-    if (cartCountElement) cartCountElement.innerText = cart.length;
-
+    localStorage.setItem(dbKey('cart'), JSON.stringify(cart)); 
+    if(cartCountElement) cartCountElement.innerText = cart.length;
+    
     const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
-    const totalAmount = subtotal - (subtotal * discount); // Apply discount
-
-    if (cartTotalElement) cartTotalElement.innerText = totalAmount.toFixed(2);
+    const totalAmount = subtotal - (subtotal * discount);
+    
+    if(cartTotalElement) cartTotalElement.innerText = totalAmount.toFixed(2);
 
     if (!cartItemsContainer) return;
-    cartItemsContainer.innerHTML = '';
+    cartItemsContainer.innerHTML = ''; 
 
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-msg">Your cart is empty.</p>';
@@ -102,65 +125,42 @@ function updateCartUI() {
                 <h4>${item.name}</h4>
                 <p>₹${item.price}</p>
             </div>
-            <button onclick="removeItem(${index})" style="margin-left:auto; background:red; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">X</button>
+            <button onclick="removeItem(${index})" style="background:red; color:white; border:none; padding:5px; border-radius:4px; cursor:pointer;">X</button>
         `;
         cartItemsContainer.appendChild(cartItem);
     });
 }
 
-window.removeItem = function (index) {
-    cart.splice(index, 1);
+window.removeItem = function(index) {
+    cart.splice(index, 1); 
     updateCartUI();
 };
 
 // Checkout
-if (checkoutBtn) {
+if(checkoutBtn) {
     checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) {
             showToast("Your cart is empty!", "error");
         } else {
-            showToast(`Thank you! Order placed for ₹${cartTotalElement.innerText}`);
-            cart = [];
-            updateCartUI();
-            toggleCart();
-        }
-    });
-}
+            const newOrder = {
+                id: 'ORD-' + Date.now(),
+                date: new Date().toLocaleDateString(),
+                items: cart, 
+                total: cartTotalElement.innerText
+            };
+            orders.unshift(newOrder);
+            localStorage.setItem(dbKey('orders'), JSON.stringify(orders));
 
-// Promo Code Logic
-const promoInput = document.getElementById('promo-code');
-const applyPromoBtn = document.getElementById('apply-promo');
-const promoMessage = document.getElementById('promo-message');
-
-if (applyPromoBtn) {
-    applyPromoBtn.addEventListener('click', () => {
-        const code = promoInput.value.trim().toUpperCase();
-        if (discount > 0) {
-            promoMessage.innerText = "Discount already applied!";
-            promoMessage.style.color = "orange";
-            return;
-        }
-        if (code === "SAVE10") {
-            discount = 0.10;
-            promoMessage.innerText = "Success! 10% OFF Applied.";
-            promoMessage.style.color = "green";
-            showToast("10% Discount Applied!");
-            updateCartUI();
-        } else if (code === "KHUSI20") {
-            discount = 0.20;
-            promoMessage.innerText = "Special Code! 20% OFF Applied.";
-            promoMessage.style.color = "green";
-            showToast("20% Discount Applied!");
-            updateCartUI();
-        } else {
-            promoMessage.innerText = "Invalid Code.";
-            promoMessage.style.color = "red";
+            showToast(`Order Placed! Total: ₹${cartTotalElement.innerText}`);
+            cart = []; 
+            updateCartUI(); 
+            toggleCart(); 
         }
     });
 }
 
 /* =========================================
-   4. WISHLIST LOGIC
+   4. WISHLIST LOGIC (Fixed: Add to Cart)
    ========================================= */
 const wishlistLink = document.getElementById('wishlist-link');
 const wishlistModal = document.getElementById('wishlist-modal');
@@ -170,36 +170,34 @@ const wishlistButtons = document.querySelectorAll('.wishlist-btn');
 
 function updateWishlistIcons() {
     wishlistButtons.forEach(btn => {
-        const productCard = btn.closest('.product');
-        const name = productCard.querySelector('.product-info h4').innerText;
-        if (wishlist.some(item => item.name === name)) {
-            btn.classList.add('active');
-        } else {
-            btn.classList.remove('active');
-        }
+        const name = btn.closest('.product').querySelector('.product-info h4').innerText;
+        if (wishlist.some(item => item.name === name)) btn.classList.add('active');
+        else btn.classList.remove('active');
     });
 }
 updateWishlistIcons();
 
 wishlistButtons.forEach(btn => {
     btn.addEventListener('click', () => {
+        if(!currentUser) { showToast("Please Login First!", "error"); return; }
+
         const productCard = btn.closest('.product');
         const name = productCard.querySelector('.product-info h4').innerText;
         const price = productCard.querySelector('.product-info .price').innerText;
         const imgSrc = productCard.querySelector('.product-image-wrapper img').src;
-
+        
         const existingIndex = wishlist.findIndex(item => item.name === name);
 
         if (existingIndex > -1) {
             wishlist.splice(existingIndex, 1);
             btn.classList.remove('active');
-            showToast(`${name} removed from Wishlist`, "error");
+            showToast("Removed from Wishlist", "error");
         } else {
             wishlist.push({ name, price, imgSrc });
             btn.classList.add('active');
-            showToast(`${name} added to Wishlist! ❤️`);
+            showToast("Added to Wishlist! ❤️");
         }
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        localStorage.setItem(dbKey('wishlist'), JSON.stringify(wishlist));
     });
 });
 
@@ -209,286 +207,260 @@ window.addEventListener('click', (e) => { if (e.target == wishlistModal) wishlis
 
 function renderWishlistItems() {
     if (!wishlistContainer) return;
-    wishlistContainer.innerHTML = '';
-    if (wishlist.length === 0) {
-        wishlistContainer.innerHTML = '<p>Your wishlist is empty 💔</p>';
-        return;
-    }
+    wishlistContainer.innerHTML = wishlist.length ? '' : '<p>Your wishlist is empty 💔</p>';
+    
     wishlist.forEach((item, index) => {
         const div = document.createElement('div');
         div.classList.add('wishlist-item');
+        // FIXED: Added "Add to Cart" Button below
         div.innerHTML = `
-            <img src="${item.imgSrc}" alt="${item.name}" onclick="openProductFromWishlist('${item.name}')" style="cursor: pointer;">
-            <div class="wishlist-details" onclick="openProductFromWishlist('${item.name}')" style="cursor: pointer;">
+            <img src="${item.imgSrc}"> 
+            <div class="wishlist-details">
                 <h4>${item.name}</h4>
                 <p>${item.price}</p>
-            </div>
+                <button onclick="moveToCartFromWishlist(${index})" style="margin-top:5px; background:#4CAF50; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;">Add to Cart</button>
+            </div> 
             <button onclick="removeFromWishlist(${index})" class="remove-wishlist-btn">Remove</button>
         `;
         wishlistContainer.appendChild(div);
     });
 }
 
-window.openProductFromWishlist = function (productName) {
-    if (wishlistModal) wishlistModal.style.display = 'none';
-    const allProducts = document.querySelectorAll('.product');
-    let found = false;
-    allProducts.forEach(card => {
-        if (card.querySelector('.product-info h4').innerText === productName) {
-            const img = card.querySelector('.product-image-wrapper img');
-            if (img) { img.click(); found = true; }
-        }
-    });
-    if (!found) showToast("Product details available in main view!", "error");
+// NEW: Move from Wishlist to Cart
+window.moveToCartFromWishlist = function(index) {
+    const item = wishlist[index];
+    // Clean price string to number for consistency
+    const priceNum = parseFloat(item.price.replace(/[^\d.]/g, ''));
+    
+    addToCart(item.name, priceNum, item.imgSrc);
+    removeFromWishlist(index); // Optional: Remove from wishlist after adding
 };
 
-window.removeFromWishlist = function (index) {
+window.removeFromWishlist = function(index) {
     wishlist.splice(index, 1);
-    localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    localStorage.setItem(dbKey('wishlist'), JSON.stringify(wishlist));
     renderWishlistItems();
     updateWishlistIcons();
 };
 
 /* =========================================
-   5. PRODUCT DETAILS MODAL + RECENT + RELATED
+   5. CONTACT FORM & ORDERS & RELATED
    ========================================= */
-const productModal = document.getElementById('product-modal');
-const closeProductModal = document.getElementById('close-product-modal');
-const productImages = document.querySelectorAll('.product-image-wrapper img');
-const modalImg = document.getElementById('modal-img');
-const modalTitle = document.getElementById('modal-title');
-const modalPrice = document.getElementById('modal-price');
-const modalDesc = document.getElementById('modal-desc');
-const modalAddBtn = document.getElementById('modal-add-btn');
+// Contact Form Logic (FIXED)
+const contactForm = document.querySelector('.contact-form');
+const contactModal = document.getElementById('contact-modal');
+const contactBtn = document.getElementById('contact-btn');
+const closeContactBtn = contactModal?.querySelector('.close-modal');
 
-productImages.forEach(img => {
-    img.addEventListener('click', (e) => {
-        const productCard = e.target.closest('.product');
-        const imgSrc = e.target.src;
-        const name = productCard.querySelector('.product-info h4').innerText;
-        const price = productCard.querySelector('.product-info .price').innerText;
-        const description = productCard.getAttribute('data-description') || "This is a premium quality product. Stylish, comfortable, and perfect for the new season. Limited stock available!";
+if (contactBtn) contactBtn.addEventListener('click', (e) => { e.preventDefault(); contactModal.style.display = 'block'; });
+if (closeContactBtn) closeContactBtn.addEventListener('click', () => { contactModal.style.display = 'none'; });
+window.addEventListener('click', (e) => { if (e.target == contactModal) contactModal.style.display = 'none'; });
 
-        if (modalImg) modalImg.src = imgSrc;
-        if (modalTitle) modalTitle.innerText = name;
-        if (modalPrice) modalPrice.innerText = price;
-        if (modalDesc) modalDesc.innerText = description;
-
-        // 1. Open Modal
-        if (productModal) productModal.style.display = 'block';
-
-        // 2. Add to Recently Viewed
-        addToRecentlyViewed(name, price, imgSrc);
-
-        // 3. Show Related Products
-        showRelatedProducts(name);
-
-        // 4. Modal Add to Cart
-        if (modalAddBtn) modalAddBtn.onclick = function () {
-            const mainAddBtn = productCard.querySelector('.add-cart-btn');
-            if (mainAddBtn) mainAddBtn.click();
-            productModal.style.display = 'none';
-        };
+if (contactForm) {
+    contactForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        showToast("Message Sent Successfully! 📨");
+        contactForm.reset();
+        contactModal.style.display = 'none';
     });
+}
+
+// Order History
+const ordersModal = document.getElementById('orders-modal');
+const closeOrdersBtn = document.getElementById('close-orders');
+const ordersContainer = document.getElementById('orders-list-container');
+
+document.addEventListener('click', (e) => {
+    if(e.target && e.target.id === 'orders-btn') {
+        e.preventDefault();
+        renderOrders();
+        if(ordersModal) ordersModal.style.display = 'block';
+    }
 });
+if(closeOrdersBtn) closeOrdersBtn.addEventListener('click', () => { ordersModal.style.display = 'none'; });
+window.addEventListener('click', (e) => { if (e.target == ordersModal) ordersModal.style.display = 'none'; });
 
-if (closeProductModal) closeProductModal.addEventListener('click', () => { productModal.style.display = 'none'; });
-window.addEventListener('click', (e) => { if (e.target == productModal) productModal.style.display = 'none'; });
+function renderOrders() {
+    if (!ordersContainer) return;
+    ordersContainer.innerHTML = orders.length ? '' : '<p>No past orders found.</p>';
+    orders.forEach(order => {
+        const div = document.createElement('div');
+        div.style.borderBottom = "1px solid #eee";
+        div.style.padding = "10px 0";
+        div.innerHTML = `<strong>Order ID:</strong> ${order.id} <br><small>${order.date}</small> <br><strong>Total: ₹${order.total}</strong><p>Items: ${order.items.map(i => i.name).join(', ')}</p>`;
+        ordersContainer.appendChild(div);
+    });
+}
 
-// --- RELATED PRODUCTS LOGIC ---
+// Related Products Logic (FIXED)
 const relatedContainer = document.getElementById('related-items-container');
+
 function showRelatedProducts(currentProductName) {
     if (!relatedContainer) return;
     relatedContainer.innerHTML = '';
     const allProducts = Array.from(document.querySelectorAll('.product'));
+    // Filter out current product
     const otherProducts = allProducts.filter(card => card.querySelector('.product-info h4').innerText !== currentProductName);
+    // Pick 3 random
     const randomPicks = otherProducts.sort(() => 0.5 - Math.random()).slice(0, 3);
 
     randomPicks.forEach(card => {
         const img = card.querySelector('.product-image-wrapper img').src;
         const name = card.querySelector('.product-info h4').innerText;
+        
         const div = document.createElement('div');
         div.classList.add('related-item');
-        div.innerHTML = `<img src="${img}" alt="${name}"><p>${name}</p>`;
-        div.addEventListener('click', () => { card.querySelector('.product-image-wrapper img').click(); });
+        div.innerHTML = `<img src="${img}"><p>${name}</p>`;
+        
+        // Allow clicking related item to open it
+        div.addEventListener('click', () => { 
+            card.querySelector('.product-image-wrapper img').click(); 
+        });
         relatedContainer.appendChild(div);
     });
 }
 
-// --- RECENTLY VIEWED LOGIC ---
-const recentContainer = document.getElementById('recent-items-container');
-function addToRecentlyViewed(name, price, imgSrc) {
-    const exists = recentItems.some(item => item.name === name);
-    if (!exists) {
-        recentItems.unshift({ name, price, imgSrc });
-        if (recentItems.length > 5) recentItems.pop();
-        localStorage.setItem('recentlyViewed', JSON.stringify(recentItems));
-        renderRecentItems();
-    }
-}
-
 /* =========================================
-   UPDATED: RECENTLY VIEWED LOGIC (With Delete)
-   ========================================= */
-function renderRecentItems() {
-    if (!recentContainer) return;
-
-    // If list is empty
-    if (recentItems.length === 0) {
-        recentContainer.innerHTML = '<p style="color:#777; padding:10px;">You haven\'t viewed any products yet.</p>';
-        return;
-    }
-
-    recentContainer.innerHTML = '';
-
-    recentItems.forEach((item, index) => {
-        const div = document.createElement('div');
-        div.classList.add('recent-card');
-
-        // Added the "X" button here
-        div.innerHTML = `
-            <button class="remove-recent-btn" onclick="removeRecentItem(event, ${index})">×</button>
-            <img src="${item.imgSrc}" alt="${item.name}">
-            <h5>${item.name}</h5>
-            <p>₹${item.price}</p>
-        `;
-
-        // Click card to open product (unless you clicked the X)
-        div.addEventListener('click', () => {
-            window.openProductFromWishlist(item.name);
-        });
-
-        recentContainer.appendChild(div);
-    });
-}
-
-// NEW FUNCTION: Handles the "Cut" / Delete action
-window.removeRecentItem = function (event, index) {
-    event.stopPropagation(); // Prevents opening the product when clicking X
-    recentItems.splice(index, 1); // Remove item from array
-    localStorage.setItem('recentlyViewed', JSON.stringify(recentItems)); // Update storage
-    renderRecentItems(); // Refresh the display
-    showToast("Removed from history", "error"); // Show feedback
-};
-
-// Make sure to call this once on load
-renderRecentItems();
-
-/* =========================================
-   6. SEARCH, SORT & DARK MODE
+   6. EXTRAS (Search, Sort, Dark Mode, Recent, Modal)
    ========================================= */
 // Search
 if (searchBox) {
     searchBox.addEventListener('keyup', (e) => {
         const searchText = e.target.value.toLowerCase();
-        const products = document.querySelectorAll('.product');
-        const noResultsMsg = document.getElementById('no-results');
-        let hasVisibleItems = false;
-        products.forEach(product => {
-            const productName = product.querySelector('.product-info h4').innerText.toLowerCase();
-            if (productName.includes(searchText)) {
-                product.style.display = 'block'; // Or flex, handled by CSS
-                hasVisibleItems = true;
-            } else {
-                product.style.display = 'none';
-            }
+        let found = false;
+        document.querySelectorAll('.product').forEach(product => {
+            const name = product.querySelector('.product-info h4').innerText.toLowerCase();
+            if(name.includes(searchText)) { product.style.display = 'block'; found = true; }
+            else { product.style.display = 'none'; }
         });
-        if (noResultsMsg) noResultsMsg.style.display = hasVisibleItems ? 'none' : 'block';
+        const noRes = document.getElementById('no-results');
+        if(noRes) noRes.style.display = found ? 'none' : 'block';
     });
 }
 
-// Sort
+// Sorting Functionality (ADDED BACK)
 const sortSelect = document.getElementById('sort-select');
 const productsContainer = document.querySelector('.products');
+
 if (sortSelect) {
     sortSelect.addEventListener('change', () => {
         const sortValue = sortSelect.value;
         const products = Array.from(document.querySelectorAll('.product'));
+
         const getPrice = (el) => parseFloat(el.querySelector('.price').innerText.replace(/[^\d.]/g, ''));
         const getName = (el) => el.querySelector('h4').innerText.toLowerCase();
+
         let sortedProducts;
 
-        if (sortValue === 'price-low') sortedProducts = products.sort((a, b) => getPrice(a) - getPrice(b));
-        else if (sortValue === 'price-high') sortedProducts = products.sort((a, b) => getPrice(b) - getPrice(a));
-        else if (sortValue === 'name-az') sortedProducts = products.sort((a, b) => getName(a).localeCompare(getName(b)));
-        else return;
+        if (sortValue === 'price-low') {
+            sortedProducts = products.sort((a, b) => getPrice(a) - getPrice(b));
+        } else if (sortValue === 'price-high') {
+            sortedProducts = products.sort((a, b) => getPrice(b) - getPrice(a));
+        } else if (sortValue === 'name-az') {
+            sortedProducts = products.sort((a, b) => getName(a).localeCompare(getName(b)));
+        } else {
+            return; 
+        }
 
-        products.forEach(p => p.remove());
-        sortedProducts.forEach(p => productsContainer.appendChild(p));
+        // Re-append to container
+        products.forEach(p => p.remove()); 
+        sortedProducts.forEach(p => productsContainer.appendChild(p)); 
     });
 }
 
 // Dark Mode
 const darkModeBtn = document.getElementById('dark-mode-btn');
-const body = document.body;
-if (localStorage.getItem('darkMode') === 'enabled') {
-    body.classList.add('dark-mode');
-    if (darkModeBtn) darkModeBtn.innerText = "☀️";
-}
-if (darkModeBtn) {
-    darkModeBtn.addEventListener('click', () => {
-        body.classList.toggle('dark-mode');
-        if (body.classList.contains('dark-mode')) {
-            localStorage.setItem('darkMode', 'enabled');
-            darkModeBtn.innerText = "☀️";
-        } else {
-            localStorage.setItem('darkMode', 'disabled');
-            darkModeBtn.innerText = "🌙";
-        }
-    });
-}
-
-/* =========================================
-   7. UTILS: SCROLL TOP, MENU, CONTACT, LOGIN
-   ========================================= */
-if (scrollToTopBtn) {
-    window.onscroll = function () {
-        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) scrollToTopBtn.style.display = "block";
-        else scrollToTopBtn.style.display = "none";
-    };
-    scrollToTopBtn.addEventListener("click", () => { window.scrollTo({ top: 0, behavior: 'smooth' }); });
-}
-
-const menuLinks = document.querySelectorAll('.menu a');
-const menuCheckbox = document.getElementById('menu-toggle');
-menuLinks.forEach(link => {
-    link.addEventListener('click', () => { if (window.innerWidth <= 768) menuCheckbox.checked = false; });
+if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
+if(darkModeBtn) darkModeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
 });
 
-const contactBtn = document.getElementById("contact-btn");
-const contactModal = document.getElementById("contact-modal");
-const contactForm = document.querySelector(".contact-form");
-if (contactBtn) contactBtn.addEventListener("click", (e) => { e.preventDefault(); contactModal.style.display = "block"; });
-window.addEventListener("click", (e) => { if (e.target == contactModal) contactModal.style.display = "none"; });
-document.querySelectorAll('.close-modal').forEach(btn => { btn.addEventListener('click', function () { this.closest('.modal-overlay').style.display = 'none'; }); });
+// Recently Viewed
+const recentContainer = document.getElementById('recent-items-container');
+function addToRecentlyViewed(name, price, imgSrc) {
+    if(recentItems.some(i => i.name === name)) return;
+    recentItems.unshift({ name, price, imgSrc });
+    if(recentItems.length > 5) recentItems.pop();
+    localStorage.setItem(dbKey('recentlyViewed'), JSON.stringify(recentItems));
+    renderRecentItems();
+}
 
-if (contactForm) {
-    contactForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const originalText = contactForm.querySelector("button").innerText;
-        const originalBackground = window.getComputedStyle(contactForm.querySelector("button")).backgroundColor;
-        contactForm.querySelector("button").innerText = "Message Sent! ✅";
-        contactForm.querySelector("button").style.backgroundColor = "#4CAF50";
-        setTimeout(() => {
-            if (contactModal) contactModal.style.display = "none";
-            contactForm.reset();
-            contactForm.querySelector("button").innerText = originalText;
-            contactForm.querySelector("button").style.backgroundColor = originalBackground;
-        }, 2000);
+function renderRecentItems() {
+    if(!recentContainer) return;
+    recentContainer.innerHTML = recentItems.length ? '' : '<p style="color:#777; padding:10px;">No recent items.</p>';
+    recentItems.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.classList.add('recent-card');
+        div.innerHTML = `<button class="remove-recent-btn" onclick="removeRecentItem(event, ${index})">×</button><img src="${item.imgSrc}"><h5>${item.name}</h5><p>₹${item.price}</p>`;
+        // Click to open
+        div.addEventListener('click', () => { 
+             const allProducts = document.querySelectorAll('.product');
+             allProducts.forEach(p => {
+                 if(p.querySelector('h4').innerText === item.name) {
+                     p.querySelector('img').click();
+                 }
+             });
+        });
+        recentContainer.appendChild(div);
     });
 }
 
-// Login
-const currentUser = localStorage.getItem('currentUser');
-const loginLink = document.querySelector('a[href="login.html"]');
-if (currentUser && loginLink) {
-    loginLink.innerText = "Logout";
-    loginLink.style.color = "red";
-    loginLink.href = "#";
-    loginLink.addEventListener('click', () => {
-        if (confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('currentUser');
-            window.location.reload();
+window.removeRecentItem = function(event, index) {
+    event.stopPropagation();
+    recentItems.splice(index, 1);
+    localStorage.setItem(dbKey('recentlyViewed'), JSON.stringify(recentItems));
+    renderRecentItems();
+};
+renderRecentItems();
+
+// Main Product Modal
+const productModal = document.getElementById('product-modal');
+const modalImg = document.getElementById('modal-img');
+const modalTitle = document.getElementById('modal-title');
+const modalPrice = document.getElementById('modal-price');
+const closeProductModal = document.getElementById('close-product-modal');
+const modalAddBtn = document.getElementById('modal-add-btn');
+
+document.querySelectorAll('.product-image-wrapper img').forEach(img => {
+    img.addEventListener('click', (e) => {
+        const card = e.target.closest('.product');
+        const name = card.querySelector('h4').innerText;
+        const price = card.querySelector('.price').innerText;
+        const src = e.target.src;
+
+        if(modalImg) modalImg.src = src;
+        if(modalTitle) modalTitle.innerText = name;
+        if(modalPrice) modalPrice.innerText = price;
+        
+        // Trigger features
+        addToRecentlyViewed(name, price, src);
+        showRelatedProducts(name); // FIX: Calling the related products function
+
+        if(productModal) productModal.style.display = 'block';
+        
+        // Modal Add to Cart
+        if(modalAddBtn) {
+            modalAddBtn.onclick = function() {
+                const priceNum = parseFloat(price.replace(/[^\d.]/g, ''));
+                addToCart(name, priceNum, src);
+                productModal.style.display = 'none';
+            };
         }
+    });
+});
+if(closeProductModal) closeProductModal.addEventListener('click', () => { productModal.style.display = 'none'; });
+window.addEventListener('click', (e) => { if (e.target == productModal) productModal.style.display = 'none'; });
+
+// Promo Code
+const promoInput = document.getElementById('promo-code');
+const applyPromoBtn = document.getElementById('apply-promo');
+if (applyPromoBtn) {
+    applyPromoBtn.addEventListener('click', () => {
+        const code = promoInput.value.trim().toUpperCase();
+        if (discount > 0) return;
+        if (code === "SAVE10") { discount = 0.10; showToast("10% Discount Applied!"); updateCartUI(); }
+        else if (code === "KHUSI20") { discount = 0.20; showToast("20% Discount Applied!"); updateCartUI(); }
+        else { showToast("Invalid Code", "error"); }
     });
 }
