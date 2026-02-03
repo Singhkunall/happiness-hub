@@ -15,6 +15,7 @@ body {
     font-family: 'Poppins', sans-serif;
     background-color: #f8f9fa;
     color: #333;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 /* =========================================
@@ -49,6 +50,7 @@ body {
 .menu {
     display: flex;
     gap: 20px;
+    align-items: center;
 }
 
 .menu a {
@@ -65,7 +67,6 @@ body {
 #menu-toggle, .hamburger {
     display: none;
 }
-
 
 /* --- Wishlist Modal Styling --- */
 .wishlist-item {
@@ -114,6 +115,7 @@ body {
 .remove-wishlist-btn:hover {
     background: #333;
 }
+
 /* =========================================
    3. HERO SECTION & SEARCH BAR
    ========================================= */
@@ -190,17 +192,16 @@ body {
 }
 
 /* =========================================
-   4. LAYOUT & SIDEBAR
+   4. LAYOUT & SIDEBAR (FIXED)
    ========================================= */
-
 .main {
     display: grid;
-    grid-template-columns: 240px 1fr; /* Fixed sidebar width, rest for products */
-    gap: 40px; /* This fixes the "bad gap" by making it intentional and clean */
+    grid-template-columns: 240px 1fr; /* 240px for Sidebar, Rest for content */
+    gap: 40px;
     max-width: 1200px;
-    margin: 40px auto; /* Adds breathing room top/bottom */
+    margin: 40px auto;
     padding: 0 20px;
-    align-items: start; /* Prevents sidebar from stretching weirdly */
+    align-items: start;
 }
 
 input[name="filter"] {
@@ -208,14 +209,18 @@ input[name="filter"] {
 }
 
 .sidebar {
+    grid-column: 1; /* Sidebar stays in column 1 */
+    grid-row: 1 / span 5; /* Spans down 5 rows so it stays beside everything */
+    
     background: white;
     padding: 25px;
-    border-radius: 16px; /* Smoother corners */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.05); /* Soft, modern shadow */
-    position: sticky; /* MAGICAL FIX: Sidebar stays visible while scrolling */
-    top: 100px; /* Spacing from the top navbar */
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 100px;
     height: fit-content;
     border: 1px solid #f0f0f0;
+    z-index: 10;
 }
 
 .sidebar h3 {
@@ -229,7 +234,6 @@ input[name="filter"] {
     padding-bottom: 10px;
 }
 
-/* The Category Buttons */
 .sidebar label {
     display: flex;
     justify-content: space-between;
@@ -245,15 +249,13 @@ input[name="filter"] {
     background-color: white;
 }
 
-/* Hover Effect - The "Attractive" Part */
 .sidebar label:hover {
-    background-color: #fff0ee; /* Light orange tint */
+    background-color: #fff0ee;
     color: #ff523b;
-    padding-left: 20px; /* Cool slide animation */
+    padding-left: 20px;
     font-weight: 600;
 }
 
-/* Add a little arrow icon after the text using CSS */
 .sidebar label::after {
     content: '›';
     font-size: 18px;
@@ -266,9 +268,8 @@ input[name="filter"] {
     opacity: 1;
 }
 
-/* --- Sub-Menus (Dropdowns) --- */
 .sub-menu {
-    display: none; /* Hidden by default */
+    display: none;
     background: #f9f9f9;
     border-radius: 10px;
     padding: 10px;
@@ -288,32 +289,52 @@ input[name="filter"] {
 .sub-menu label:hover {
     background: white;
     color: #ff523b;
-    border-left: 2px solid #ff523b; /* Red line indicator */
+    border-left: 2px solid #ff523b;
     padding-left: 15px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.03);
 }
 
-/* Animation for opening menu */
 @keyframes slideDown {
     from { opacity: 0; transform: translateY(-10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Active State (Keep menus open) - Same logic as before */
 #clothes:checked ~ .sidebar .clothes-menu,
 #jewellery:checked ~ .sidebar .jewellery-menu,
-/* Add your other specific IDs here if needed */
 #jhumka:checked ~ .sidebar .jewellery-menu {
     display: block;
 }
+
 /* =========================================
-   5. PRODUCTS GRID (UPDATED FOR HOVER)
+   5. PRODUCTS GRID (FIXED)
    ========================================= */
+
+/* Header forced to Column 2 */
+.products-header {
+    grid-column: 2; 
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.sort-container select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Products forced to Column 2 */
 .products {
+    grid-column: 2;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
-    padding: 0 20px;
+    padding-bottom: 40px;
 }
 
 .product {
@@ -323,35 +344,31 @@ input[name="filter"] {
     transition: all 0.3s ease;
     border: 1px solid #eee;
     overflow: hidden;
-    
-    /* FIX: These 2 lines ensure the card fills the grid cell exactly */
     width: 100%;
     margin: 0;
-
     display: flex;
-    flex-direction: column; /* Organizes image and text vertically */
+    flex-direction: column;
 }
 
 .product:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1); /* Slightly softer shadow */
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
-/* New Wrapper for Image and Buttons */
 .product-image-wrapper {
     position: relative;
     overflow: hidden;
     width: 100%;
-    height: 280px; /* STRICT HEIGHT: All images will be this tall */
-    background-color: #f4f4f4; /* Light grey background while loading */
+    height: 280px;
+    background-color: #f4f4f4;
 }
 
 .product-image-wrapper img {
     width: 100%;
-    height: 100%; /* Force image to fill the 280px height */
-    object-fit: cover; /* Crops the image smartly so it doesn't look squashed */
+    height: 100%;
+    object-fit: cover;
     display: block;
-    transition: transform 0.5s ease; /* Slower, smoother zoom */
+    transition: transform 0.5s ease;
 }
 
 .product-info {
@@ -371,10 +388,9 @@ input[name="filter"] {
     margin: 0;
 }
 
-/* --- Hover Button Styles --- */
 .hover-btn {
     position: absolute;
-    opacity: 0; /* Hidden by default */
+    opacity: 0;
     transition: all 0.3s ease;
     z-index: 10;
     cursor: pointer;
@@ -382,7 +398,6 @@ input[name="filter"] {
     outline: none;
 }
 
-/* Wishlist Button */
 .wishlist-btn {
     top: 15px;
     right: 15px;
@@ -403,7 +418,6 @@ input[name="filter"] {
     color: #ff523b;
 }
 
-/* Add to Cart Button */
 .add-cart-btn {
     bottom: 0;
     left: 0;
@@ -414,43 +428,34 @@ input[name="filter"] {
     font-weight: 600;
     text-transform: uppercase;
     font-size: 14px;
-    transform: translateY(100%); /* Start below the container */
+    transform: translateY(100%);
 }
 
 .add-cart-btn:hover {
     background-color: #333;
 }
 
-/* --- Hover Effects --- */
 .product-image-wrapper:hover img {
-    transform: scale(1.05); /* Subtle zoom */
+    transform: scale(1.05);
 }
 
 .product-image-wrapper:hover .hover-btn {
-    opacity: 1; /* Show buttons */
+    opacity: 1;
 }
 
 .product-image-wrapper:hover .add-cart-btn {
-    transform: translateY(0); /* Slide up */
+    transform: translateY(0);
 }
 
-
 /* =========================================
-   6. FILTERING LOGIC (UPDATED)
+   6. FILTERING LOGIC
    ========================================= */
-/* Main Categories */
 #clothes:checked ~ .products .product:not(.clothes),
 #beauty:checked ~ .products .product:not(.beauty),
 #footwear:checked ~ .products .product:not(.footwear),
-
-/* Clothes Sub-Categories */
 #topwear:checked ~ .products .product:not(.topwear),
 #bottomwear:checked ~ .products .product:not(.bottomwear),
-
-/* Jewellery Main Category */
 #jewellery:checked ~ .products .product:not(.jewellery),
-
-/* Jewellery Sub-Categories */
 #jhumka:checked ~ .products .product:not(.jhumka),
 #studs:checked ~ .products .product:not(.studs),
 #ring:checked ~ .products .product:not(.ring),
@@ -458,6 +463,7 @@ input[name="filter"] {
 #neck:checked ~ .products .product:not(.neck) {
     display: none;
 }
+
 /* =========================================
    7. CART SIDEBAR
    ========================================= */
@@ -571,7 +577,7 @@ input[name="filter"] {
 }
 
 /* =========================================
-   8. CONTACT MODAL
+   8. MODALS & FORMS
    ========================================= */
 .modal-overlay {
     display: none;
@@ -587,7 +593,7 @@ input[name="filter"] {
 
 .modal-content {
     background-color: white;
-    margin: 10% auto;
+    margin: 5% auto;
     padding: 30px;
     border-radius: 15px;
     width: 90%;
@@ -649,7 +655,7 @@ input[name="filter"] {
 }
 
 /* =========================================
-   9. MEGA FOOTER
+   9. FOOTER
    ========================================= */
 .footer-section {
     background-color: #172337;
@@ -675,24 +681,17 @@ input[name="filter"] {
     min-width: 150px;
 }
 
-.footer-column h4, 
-.address-box h4 {
+.footer-column h4, .address-box h4 {
     color: #878787;
     font-size: 12px;
     margin-bottom: 10px;
     font-weight: 400;
-    text-transform: uppercase;
 }
 
 .footer-column a {
     color: white;
     text-decoration: none;
     margin-bottom: 6px;
-    font-weight: 500;
-}
-
-.footer-column a:hover {
-    text-decoration: underline;
 }
 
 .footer-divider {
@@ -714,20 +713,6 @@ input[name="filter"] {
     flex-grow: 1;
 }
 
-.address-box {
-    max-width: 250px;
-}
-
-.address-box p {
-    color: white;
-    line-height: 1.5;
-    margin: 0;
-}
-
-.blue-text {
-    color: #2874f0;
-}
-
 .social-icons {
     margin-top: 20px;
 }
@@ -737,7 +722,6 @@ input[name="filter"] {
     text-decoration: none;
     margin-right: 15px;
     font-weight: bold;
-    font-size: 14px;
 }
 
 .footer-bottom {
@@ -756,16 +740,10 @@ input[name="filter"] {
 .bottom-links {
     display: flex;
     gap: 20px;
-    align-items: center;
-}
-
-.bottom-links span {
-    cursor: pointer;
-    color: white;
 }
 
 /* =========================================
-   10. SCROLL TO TOP BUTTON
+   10. EXTRAS (ScrollToTop, Mobile, NoResults)
    ========================================= */
 #scrollToTop {
     display: none; 
@@ -774,7 +752,6 @@ input[name="filter"] {
     right: 20px;
     z-index: 99;
     border: none;
-    outline: none;
     background-color: #ff523b; 
     color: white;
     cursor: pointer;
@@ -790,18 +767,9 @@ input[name="filter"] {
     transform: translateY(-3px);
 }
 
-/* =========================================
-   11. MOBILE RESPONSIVENESS
-   ========================================= */
 @media (max-width: 768px) {
-    .main {
-        grid-template-columns: 1fr;
-    }
-    
-    .sidebar {
-        margin-bottom: 20px;
-    }
-
+    .main { grid-template-columns: 1fr; }
+    .sidebar { margin-bottom: 20px; }
     .menu {
         display: none;
         flex-direction: column;
@@ -814,54 +782,16 @@ input[name="filter"] {
         box-shadow: 0 5px 10px rgba(0,0,0,0.1);
         padding: 0;
     }
-
-    .menu a {
-        padding: 15px 20px;
-        border-bottom: 1px solid #eee;
-        text-align: left;
-    }
-
-    #menu-toggle:checked ~ .menu {
-        display: flex;
-        animation: slideDown 0.3s ease-in-out;
-    }
-
-    .hamburger {
-        display: block;
-        font-size: 28px;
-        cursor: pointer;
-    }
-
-    .footer-container {
-        flex-direction: column;
-        gap: 30px;
-    }
-    
-    .footer-address-section {
-        flex-direction: column;
-    }
-    
-    .footer-bottom {
-        flex-direction: column;
-        gap: 15px;
-        text-align: center;
-    }
-    
-    .bottom-links {
-        flex-direction: column;
-        gap: 10px;
-    }
+    .menu a { padding: 15px 20px; border-bottom: 1px solid #eee; text-align: left; }
+    #menu-toggle:checked ~ .menu { display: flex; animation: slideDown 0.3s ease-in-out; }
+    .hamburger { display: block; font-size: 28px; cursor: pointer; }
+    .footer-container, .footer-address-section, .footer-bottom, .bottom-links { flex-direction: column; gap: 15px; }
 }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* --- No Results Message --- */
+/* No Results Message - Fixed to Column 2 */
 .no-results {
-    display: none; /* Hidden by default */
-    grid-column: 1 / -1; /* Magic trick: Makes it span the full width of the grid */
+    display: none;
+    grid-column: 1 / -1; /* Inside products grid, this means span all PRODUCT columns */
     text-align: center;
     padding: 40px;
     color: #666;
@@ -869,13 +799,12 @@ input[name="filter"] {
     width: 100%;
 }
 
-.no-results p {
-    font-weight: 500;
-}
-/* --- PRODUCT DETAILS MODAL --- */
+/* =========================================
+   11. PRODUCT MODAL DETAILS
+   ========================================= */
 .product-modal-content {
-    max-width: 700px; /* Wider than other modals */
-    padding: 0; /* Remove default padding for split layout */
+    max-width: 700px;
+    padding: 0;
     overflow: hidden;
     text-align: left;
 }
@@ -885,7 +814,6 @@ input[name="filter"] {
     flex-wrap: wrap;
 }
 
-/* Image Side */
 .modal-img-wrapper {
     flex: 1;
     min-width: 300px;
@@ -902,7 +830,6 @@ input[name="filter"] {
     max-height: 400px;
 }
 
-/* Text Side */
 .modal-details {
     flex: 1;
     padding: 30px;
@@ -959,7 +886,6 @@ input[name="filter"] {
     background: #333;
 }
 
-/* Close button positioning fix for this specific modal */
 #close-product-modal {
     position: absolute;
     top: 10px;
@@ -967,4 +893,173 @@ input[name="filter"] {
     font-size: 30px;
     color: #333;
     z-index: 100;
+}
+
+/* =========================================
+   12. NEW FEATURES (DARK MODE, PROMO, TOAST)
+   ========================================= */
+
+/* --- DARK MODE --- */
+body.dark-mode {
+    background-color: #1a1a1a;
+    color: #f1f1f1;
+}
+
+body.dark-mode .product, 
+body.dark-mode .sidebar, 
+body.dark-mode .cart-sidebar,
+body.dark-mode .modal-content,
+body.dark-mode .navbar,
+body.dark-mode .search-container,
+body.dark-mode .recent-card,
+body.dark-mode .related-item {
+    background-color: #2d2d2d;
+    color: #f1f1f1;
+    border-color: #444;
+}
+
+body.dark-mode .menu {
+    background-color: #2d2d2d; /* Fix mobile menu dark mode */
+}
+
+body.dark-mode .menu a {
+    color: #f1f1f1;
+    border-color: #444;
+}
+
+body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode .price {
+    color: #fff;
+}
+
+body.dark-mode .sidebar label, 
+body.dark-mode .sub-menu label {
+    background-color: #2d2d2d;
+    color: #ccc;
+}
+
+body.dark-mode .sidebar label:hover {
+    background-color: #333;
+    color: #ff523b;
+}
+
+#dark-mode-btn {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 5px 10px;
+    margin-left: 10px;
+    transition: 0.3s;
+}
+
+/* --- PROMO CODE --- */
+.coupon-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.coupon-section input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#apply-promo {
+    background: #333;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#promo-message {
+    font-size: 12px;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+/* --- TOAST NOTIFICATIONS --- */
+#toast-box {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    z-index: 10000;
+}
+
+.toast {
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    margin: 5px 0;
+    border-radius: 5px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transform: translateX(100%);
+    animation: slideIn 0.5s forwards, fadeOut 0.5s forwards 3s;
+}
+
+.toast.success { border-left: 5px solid #4CAF50; }
+.toast.error { border-left: 5px solid #ff523b; }
+
+@keyframes slideIn { to { transform: translateX(0); } }
+@keyframes fadeOut { to { opacity: 0; visibility: hidden; } }
+
+/* --- RECENTLY VIEWED & RELATED --- */
+/* Fixed to Column 2 */
+.recently-viewed-section {
+    grid-column: 2;
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+#recent-items-container, #related-items-container {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+
+.recent-card, .related-item {
+    min-width: 150px;
+    cursor: pointer;
+    text-align: center;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 10px;
+    transition: 0.3s;
+    background: white;
+}
+
+.recent-card:hover, .related-item:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+.recent-card img, .related-item img { width: 100%; height: 120px; object-fit: cover; border-radius: 5px; }
+.recent-card h5, .related-item p { margin: 10px 0 5px; font-size: 14px; }
+.recent-card p { color: #ff523b; font-weight: bold; font-size: 12px; }
+
+/* Sort Header */
+.products-header {
+    grid-column: 2; /* Forced to Column 2 */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.sort-container select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    cursor: pointer;
 }
