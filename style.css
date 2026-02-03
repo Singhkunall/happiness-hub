@@ -1063,3 +1063,46 @@ body.dark-mode .sidebar label:hover {
     outline: none;
     cursor: pointer;
 }
+
+/* --- UPDATED RECENT CARD STYLES --- */
+.recent-card {
+    position: relative; /* This is crucial for placing the X button */
+    min-width: 150px;
+    cursor: pointer;
+    text-align: center;
+    border: 1px solid #f0f0f0;
+    border-radius: 10px;
+    padding: 10px;
+    transition: 0.3s;
+    background: white;
+}
+
+/* The "Cut" Button */
+.remove-recent-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #ff523b;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    cursor: pointer;
+    font-size: 14px;
+    display: none; /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: 0.2s;
+}
+
+.remove-recent-btn:hover {
+    background: #333;
+    transform: scale(1.1);
+}
+
+/* Show button only when hovering over the card */
+.recent-card:hover .remove-recent-btn {
+    display: flex;
+}

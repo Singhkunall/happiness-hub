@@ -26,10 +26,10 @@ function showToast(msg, type = 'success') {
 
     const toast = document.createElement('div');
     toast.classList.add('toast', type);
-    
+
     // Icon based on type
     const icon = type === 'success' ? '✅' : '❌';
-    
+
     toast.innerHTML = `${icon} ${msg}`;
     toastBox.appendChild(toast);
 
@@ -52,9 +52,9 @@ function toggleCart() {
 
 // Open/Close Cart Listeners
 const cartLink = document.getElementById('cart-count').parentElement;
-if(cartLink) cartLink.addEventListener('click', (e) => { e.preventDefault(); toggleCart(); });
-if(closeCartBtn) closeCartBtn.addEventListener('click', toggleCart);
-if(overlay) overlay.addEventListener('click', toggleCart);
+if (cartLink) cartLink.addEventListener('click', (e) => { e.preventDefault(); toggleCart(); });
+if (closeCartBtn) closeCartBtn.addEventListener('click', toggleCart);
+if (overlay) overlay.addEventListener('click', toggleCart);
 
 // Add to Cart
 const addToCartButtons = document.querySelectorAll('.add-cart-btn');
@@ -69,7 +69,7 @@ addToCartButtons.forEach(button => {
         const product = { name, price, imgSrc };
         cart.push(product);
         updateCartUI();
-        
+
         // Show Toast instead of Alert
         showToast(`${name} added to cart!`);
     });
@@ -78,15 +78,15 @@ addToCartButtons.forEach(button => {
 // Update UI
 function updateCartUI() {
     localStorage.setItem('cart', JSON.stringify(cart));
-    if(cartCountElement) cartCountElement.innerText = cart.length;
-    
+    if (cartCountElement) cartCountElement.innerText = cart.length;
+
     const subtotal = cart.reduce((sum, item) => sum + item.price, 0);
     const totalAmount = subtotal - (subtotal * discount); // Apply discount
-    
-    if(cartTotalElement) cartTotalElement.innerText = totalAmount.toFixed(2);
+
+    if (cartTotalElement) cartTotalElement.innerText = totalAmount.toFixed(2);
 
     if (!cartItemsContainer) return;
-    cartItemsContainer.innerHTML = ''; 
+    cartItemsContainer.innerHTML = '';
 
     if (cart.length === 0) {
         cartItemsContainer.innerHTML = '<p class="empty-msg">Your cart is empty.</p>';
@@ -108,21 +108,21 @@ function updateCartUI() {
     });
 }
 
-window.removeItem = function(index) {
-    cart.splice(index, 1); 
+window.removeItem = function (index) {
+    cart.splice(index, 1);
     updateCartUI();
 };
 
 // Checkout
-if(checkoutBtn) {
+if (checkoutBtn) {
     checkoutBtn.addEventListener('click', () => {
         if (cart.length === 0) {
             showToast("Your cart is empty!", "error");
         } else {
             showToast(`Thank you! Order placed for ₹${cartTotalElement.innerText}`);
-            cart = []; 
-            updateCartUI(); 
-            toggleCart(); 
+            cart = [];
+            updateCartUI();
+            toggleCart();
         }
     });
 }
@@ -187,7 +187,7 @@ wishlistButtons.forEach(btn => {
         const name = productCard.querySelector('.product-info h4').innerText;
         const price = productCard.querySelector('.product-info .price').innerText;
         const imgSrc = productCard.querySelector('.product-image-wrapper img').src;
-        
+
         const existingIndex = wishlist.findIndex(item => item.name === name);
 
         if (existingIndex > -1) {
@@ -229,8 +229,8 @@ function renderWishlistItems() {
     });
 }
 
-window.openProductFromWishlist = function(productName) {
-    if(wishlistModal) wishlistModal.style.display = 'none';
+window.openProductFromWishlist = function (productName) {
+    if (wishlistModal) wishlistModal.style.display = 'none';
     const allProducts = document.querySelectorAll('.product');
     let found = false;
     allProducts.forEach(card => {
@@ -242,7 +242,7 @@ window.openProductFromWishlist = function(productName) {
     if (!found) showToast("Product details available in main view!", "error");
 };
 
-window.removeFromWishlist = function(index) {
+window.removeFromWishlist = function (index) {
     wishlist.splice(index, 1);
     localStorage.setItem('wishlist', JSON.stringify(wishlist));
     renderWishlistItems();
@@ -254,7 +254,7 @@ window.removeFromWishlist = function(index) {
    ========================================= */
 const productModal = document.getElementById('product-modal');
 const closeProductModal = document.getElementById('close-product-modal');
-const productImages = document.querySelectorAll('.product-image-wrapper img'); 
+const productImages = document.querySelectorAll('.product-image-wrapper img');
 const modalImg = document.getElementById('modal-img');
 const modalTitle = document.getElementById('modal-title');
 const modalPrice = document.getElementById('modal-price');
@@ -269,14 +269,14 @@ productImages.forEach(img => {
         const price = productCard.querySelector('.product-info .price').innerText;
         const description = productCard.getAttribute('data-description') || "This is a premium quality product. Stylish, comfortable, and perfect for the new season. Limited stock available!";
 
-        if(modalImg) modalImg.src = imgSrc;
-        if(modalTitle) modalTitle.innerText = name;
-        if(modalPrice) modalPrice.innerText = price;
-        if(modalDesc) modalDesc.innerText = description;
+        if (modalImg) modalImg.src = imgSrc;
+        if (modalTitle) modalTitle.innerText = name;
+        if (modalPrice) modalPrice.innerText = price;
+        if (modalDesc) modalDesc.innerText = description;
 
         // 1. Open Modal
-        if(productModal) productModal.style.display = 'block';
-        
+        if (productModal) productModal.style.display = 'block';
+
         // 2. Add to Recently Viewed
         addToRecentlyViewed(name, price, imgSrc);
 
@@ -284,15 +284,15 @@ productImages.forEach(img => {
         showRelatedProducts(name);
 
         // 4. Modal Add to Cart
-        if(modalAddBtn) modalAddBtn.onclick = function() {
+        if (modalAddBtn) modalAddBtn.onclick = function () {
             const mainAddBtn = productCard.querySelector('.add-cart-btn');
-            if(mainAddBtn) mainAddBtn.click();
-            productModal.style.display = 'none'; 
+            if (mainAddBtn) mainAddBtn.click();
+            productModal.style.display = 'none';
         };
     });
 });
 
-if(closeProductModal) closeProductModal.addEventListener('click', () => { productModal.style.display = 'none'; });
+if (closeProductModal) closeProductModal.addEventListener('click', () => { productModal.style.display = 'none'; });
 window.addEventListener('click', (e) => { if (e.target == productModal) productModal.style.display = 'none'; });
 
 // --- RELATED PRODUCTS LOGIC ---
@@ -327,19 +327,52 @@ function addToRecentlyViewed(name, price, imgSrc) {
     }
 }
 
+/* =========================================
+   UPDATED: RECENTLY VIEWED LOGIC (With Delete)
+   ========================================= */
 function renderRecentItems() {
     if (!recentContainer) return;
-    recentContainer.innerHTML = recentItems.length === 0 ? '<p style="color:#777; padding:10px;">You haven\'t viewed any products yet.</p>' : '';
-    
-    recentItems.forEach(item => {
+
+    // If list is empty
+    if (recentItems.length === 0) {
+        recentContainer.innerHTML = '<p style="color:#777; padding:10px;">You haven\'t viewed any products yet.</p>';
+        return;
+    }
+
+    recentContainer.innerHTML = '';
+
+    recentItems.forEach((item, index) => {
         const div = document.createElement('div');
         div.classList.add('recent-card');
-        div.innerHTML = `<img src="${item.imgSrc}" alt="${item.name}"><h5>${item.name}</h5><p>${item.price}</p>`;
-        div.addEventListener('click', () => { window.openProductFromWishlist(item.name); });
+
+        // Added the "X" button here
+        div.innerHTML = `
+            <button class="remove-recent-btn" onclick="removeRecentItem(event, ${index})">×</button>
+            <img src="${item.imgSrc}" alt="${item.name}">
+            <h5>${item.name}</h5>
+            <p>₹${item.price}</p>
+        `;
+
+        // Click card to open product (unless you clicked the X)
+        div.addEventListener('click', () => {
+            window.openProductFromWishlist(item.name);
+        });
+
         recentContainer.appendChild(div);
     });
 }
-renderRecentItems(); // Init on load
+
+// NEW FUNCTION: Handles the "Cut" / Delete action
+window.removeRecentItem = function (event, index) {
+    event.stopPropagation(); // Prevents opening the product when clicking X
+    recentItems.splice(index, 1); // Remove item from array
+    localStorage.setItem('recentlyViewed', JSON.stringify(recentItems)); // Update storage
+    renderRecentItems(); // Refresh the display
+    showToast("Removed from history", "error"); // Show feedback
+};
+
+// Make sure to call this once on load
+renderRecentItems();
 
 /* =========================================
    6. SEARCH, SORT & DARK MODE
@@ -390,9 +423,9 @@ const darkModeBtn = document.getElementById('dark-mode-btn');
 const body = document.body;
 if (localStorage.getItem('darkMode') === 'enabled') {
     body.classList.add('dark-mode');
-    if(darkModeBtn) darkModeBtn.innerText = "☀️";
+    if (darkModeBtn) darkModeBtn.innerText = "☀️";
 }
-if(darkModeBtn) {
+if (darkModeBtn) {
     darkModeBtn.addEventListener('click', () => {
         body.classList.toggle('dark-mode');
         if (body.classList.contains('dark-mode')) {
@@ -408,8 +441,8 @@ if(darkModeBtn) {
 /* =========================================
    7. UTILS: SCROLL TOP, MENU, CONTACT, LOGIN
    ========================================= */
-if(scrollToTopBtn) {
-    window.onscroll = function() {
+if (scrollToTopBtn) {
+    window.onscroll = function () {
         if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) scrollToTopBtn.style.display = "block";
         else scrollToTopBtn.style.display = "none";
     };
@@ -427,18 +460,18 @@ const contactModal = document.getElementById("contact-modal");
 const contactForm = document.querySelector(".contact-form");
 if (contactBtn) contactBtn.addEventListener("click", (e) => { e.preventDefault(); contactModal.style.display = "block"; });
 window.addEventListener("click", (e) => { if (e.target == contactModal) contactModal.style.display = "none"; });
-document.querySelectorAll('.close-modal').forEach(btn => { btn.addEventListener('click', function() { this.closest('.modal-overlay').style.display = 'none'; }); });
+document.querySelectorAll('.close-modal').forEach(btn => { btn.addEventListener('click', function () { this.closest('.modal-overlay').style.display = 'none'; }); });
 
 if (contactForm) {
     contactForm.addEventListener("submit", (e) => {
-        e.preventDefault(); 
+        e.preventDefault();
         const originalText = contactForm.querySelector("button").innerText;
         const originalBackground = window.getComputedStyle(contactForm.querySelector("button")).backgroundColor;
         contactForm.querySelector("button").innerText = "Message Sent! ✅";
         contactForm.querySelector("button").style.backgroundColor = "#4CAF50";
         setTimeout(() => {
-            if(contactModal) contactModal.style.display = "none";
-            contactForm.reset(); 
+            if (contactModal) contactModal.style.display = "none";
+            contactForm.reset();
             contactForm.querySelector("button").innerText = originalText;
             contactForm.querySelector("button").style.backgroundColor = originalBackground;
         }, 2000);
@@ -450,12 +483,12 @@ const currentUser = localStorage.getItem('currentUser');
 const loginLink = document.querySelector('a[href="login.html"]');
 if (currentUser && loginLink) {
     loginLink.innerText = "Logout";
-    loginLink.style.color = "red"; 
-    loginLink.href = "#"; 
+    loginLink.style.color = "red";
+    loginLink.href = "#";
     loginLink.addEventListener('click', () => {
         if (confirm("Are you sure you want to logout?")) {
-            localStorage.removeItem('currentUser'); 
-            window.location.reload(); 
+            localStorage.removeItem('currentUser');
+            window.location.reload();
         }
     });
 }
